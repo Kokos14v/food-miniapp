@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>FoodHelper Coconut AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --tq: #13e8c8;
+      --tq-soft: #39c5b8;
+      --bg1: #050816;
+      --bg2: #031018;
+      --glass: rgba(255,255,255,0.12);
+      --glass-border: rgba(255,255,255,0.32);
+      --text: #ffffff;
+      --text-muted: #cdd3df;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI";
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,255,214,0.12) 0, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(0,255,214,0.1) 0, transparent 65%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      backdrop-filter: blur(22px);
+      background: rgba(8,18,28,0.8);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 14px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, #fff, #f4f4f4 40%, #d5a46d 68%, #8b5b2b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+      position: relative;
+    }
+
+    .logo::after {
+      content: "";
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid rgba(19,232,200,0.6);
+      box-shadow: 0 0 22px rgba(19,232,200,0.8), 0 0 40px rgba(19,232,200,0.3);
+    }
+
+    .logo span {
+      font-size: 26px;
+      z-index: 2;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .title-wrap p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .container {
+      max-width: 1040px;
+      padding: 18px;
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .nav-btn {
+      backdrop-filter: blur(18px);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 12px;
+      border-radius: 18px;
+      color: var(--text);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+    }
+
+    .nav-btn.active {
+      border-color: rgba(19,232,200,0.7);
+      background: rgba(19,232,200,0.15);
+      box-shadow: 0 10px 30px rgba(19,232,200,0.35);
+      transform: translateY(-2px);
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    }
+
+    .section {
+      display: none;
+      border-radius: 22px;
+      padding: 18px;
+      backdrop-filter: blur(24px);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.55);
+      margin-bottom: 24px;
+    }
+
+    .section.active { display: block; }
+
+    textarea, input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(3,12,20,0.8);
+      color: var(--text);
+      margin-top: 10px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--tq);
+      box-shadow: 0 0 10px rgba(19,232,200,0.55);
+    }
+
+    button.action {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, var(--tq), var(--tq-soft));
+      color: #00110d;
+      margin-top: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.6), 0 0 22px rgba(19,232,200,0.5);
+      transition: 0.15s;
+    }
+
+    button.action:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+
+    .output {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 10px;
+      max-height: 260px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .buy-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ingredient-buttons {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo"><span>🥥</span></div>
+  <div class="title-wrap">
+    <h1>FoodHelper Coconut AI</h1>
+    <p>Скляний дизайн + всі AI функції</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="nav">
+    <button class="nav-btn active" data-sec="recipes"><span>🍳</span>Рецепти</button>
+    <button class="nav-btn" data-sec="menu"><span>🥗</span>Меню</button>
+    <button class="nav-btn" data-sec="search"><span>🔍</span>Пошук</button>
+    <button class="nav-btn" data-sec="shopping"><span>🛒</span>Покупки</button>
+    <button class="nav-btn" data-sec="pdf"><span>📄</span>PDF</button>
+    <button class="nav-btn" data-sec="vision"><span>📸</span>Фото</button>
+  </div>
+
+  <!-- ====== РОЗДІЛ РЕЦЕПТІВ ====== -->
+  <section id="recipes" class="section active">
+    <h2>🍳 Отримати рецепт</h2>
+
+    <select id="recipe-type">
+      <option value="breakfast">Сніданок</option>
+      <option value="lunch">Обід</option>
+      <option value="dinner">Вечеря</option>
+      <option value="snack">Перекус</option>
+    </select>
+
+    <button class="action" onclick="getRecipe()">Отримати рецепт</button>
+
+    <div id="recipe-output" class="output"></div>
+
+    <div id="buy-block" style="display:none; margin-top:10px;">
+      <h3>🛒 Купити продукти:</h3>
+      <div class="buy-row">
+        <button class="action" onclick="buyAll('Instacart')">Instacart</button>
+        <button class="action" onclick="buyAll('Amazon')">Amazon</button>
+        <button class="action" onclick="buyAll('Walmart')">Walmart</button>
+        <button class="action" onclick="buyAll('iHerb')">iHerb</button>
+      </div>
+
+      <h4 style="margin-top:10px;">Купити окремий інгредієнт:</h4>
+      <div class="ingredient-buttons" id="ingredient-buttons"></div>
+    </div>
+  </section>
+  <!-- ====== МЕНЮ ====== -->
+  <section id="menu" class="section">
+    <h2>🥗 Меню</h2>
+
+    <button class="action" onclick="getMenuToday()">Меню на сьогодні</button>
+    <div id="menu-today-output" class="output"></div>
+
+    <button class="action" onclick="getMenuWeek()">Меню на тиждень</button>
+    <div id="menu-week-output" class="output"></div>
+  </section>
+
+
+  <!-- ====== EMBEDDINGS ПОШУК ====== -->
+  <section id="search" class="section">
+    <h2>🔍 Пошук по рецептам</h2>
+    <p class="sub">AI знайде найбільш схожі рецепти з PDF-бази</p>
+
+    <input type="text" id="search-query" placeholder="Напр. 'щось з куркою і рисом'">
+
+    <button class="action" onclick="searchRecipes()">Пошук</button>
+
+    <div id="search-output" class="output"></div>
+  </section>
+
+
+  <!-- ====== СПИСОК ПОКУПОК ====== -->
+  <section id="shopping" class="section">
+    <h2>🛒 Створити список покупок</h2>
+
+    <textarea id="shopping-menu-input" rows="5" placeholder="Встав меню сюди..."></textarea>
+
+    <button class="action" onclick="getShoppingList()">Створити</button>
+
+    <div id="shopping-output" class="output"></div>
+  </section>
+
+
+  <!-- ====== ПАРСИНГ PDF ====== -->
+  <section id="pdf" class="section">
+    <h2>📄 PDF → Рецепти</h2>
+
+    <input type="file" id="pdf-file" accept="application/pdf">
+
+    <button class="action" onclick="parsePdf()">Завантажити PDF</button>
+
+    <div id="pdf-output" class="output"></div>
+  </section>
+
+
+  <!-- ====== AI VISION ====== -->
+  <section id="vision" class="section">
+    <h2>📸 Аналіз фото продукту</h2>
+    <p class="sub">AI визначить продукт, калорії, біохімію, поради</p>
+
+    <input type="file" id="vision-file" accept="image/*">
+
+    <button class="action" onclick="analyzeImage()">Аналізувати</button>
+
+    <div id="vision-output" class="output"></div>
+  </section>
+
+</div>
+
+
+<!-- ========== JS ========== -->
+<script>
+
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(sec=>sec.classList.remove("active"));
+
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.sec).classList.add("active");
+  }
+});
+
+
+async function api(path, body={}, isForm=false) {
+  const opt = { method:"POST" };
+
+  if (isForm) opt.body = body;
+  else {
+    opt.headers = { "Content-Type": "application/json" };
+    opt.body = JSON.stringify(body);
+  }
+
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+
+/* ====== РЕЦЕПТ ====== */
+async function getRecipe() {
+  const type = document.getElementById("recipe-type").value;
+  const out = document.getElementById("recipe-output");
+  out.innerText = "Генерую...";
+
+  const r = await api("/api/recipe", { type });
+  out.innerText = r.result || r.error;
+
+  const ing = extractIngredients(out.innerText);
+  renderIngredientButtons(ing);
+}
+
+
+/* ====== ВИДІЛЕННЯ ІНГРЕДІЄНТІВ ====== */
+function extractIngredients(text) {
+  const lines = text.split("\n");
+  const items = [];
+  let capture = false;
+
+  for (let l of lines) {
+    l = l.trim();
+    if (l.toLowerCase().startsWith("інгредієнти")) { capture = true; continue; }
+    if (l.toLowerCase().startsWith("кроки")) break;
+
+    if (capture && l) {
+      if (l.startsWith("-")) l = l.slice(1).trim();
+      items.push(l);
+    }
+  }
+  return items;
+}
+
+
+/* ====== ОНОВЛЕННЯ КНОПОК ІНГРЕДІЄНТІВ ====== */
+function renderIngredientButtons(list) {
+  const block = document.getElementById("buy-block");
+  const cont = document.getElementById("ingredient-buttons");
+
+  block.style.display = "block";
+  cont.innerHTML = "";
+
+  list.forEach(ing=>{
+    const btn = document.createElement("button");
+    btn.className = "action";
+    btn.innerText = `Купити: ${ing}`;
+    btn.onclick = ()=>buySingle(ing);
+    cont.appendChild(btn);
+  });
+}
+
+
+/* ====== КУПИТИ ВСЕ (AI) ====== */
+async function buyAll(store) {
+  const text = document.getElementById("recipe-output").innerText;
+  const ingr = extractIngredients(text);
+
+  const results = [];
+  for (let item of ingr) {
+    const r = await api("/api/find-product", { ingredient:item, store });
+    results.push(`${item}:\n${r.url}\n`);
+  }
+
+  alert("Знайдені товари ("+store+"):\n\n"+results.join("\n"));
+}
+
+
+/* ====== КУПИТИ ОДИН ІНГРЕДІЄНТ ====== */
+async function buySingle(ingredient) {
+  const r = await api("/api/find-product", { ingredient, store:"Instacart" });
+  window.open(r.url, "_blank");
+}
+
+
+/* ====== МЕНЮ ====== */
+async function getMenuToday() {
+  const out = document.getElementById("menu-today-output");
+  out.innerText = "Генерую...";
+  const r = await api("/api/menu-today");
+  out.innerText = r.result || r.error;
+}
+
+async function getMenuWeek() {
+  const out = document.getElementById("menu-week-output");
+  out.innerText = "Генерую...";
+  const r = await api("/api/menu-week");
+  out.innerText = r.result || r.error;
+}
+
+
+/* ====== EMBEDDINGS SEARCH ====== */
+async function searchRecipes() {
+  const q = document.getElementById("search-query").value;
+  const out = document.getElementById("search-output");
+  out.innerText = "Шукаю...";
+
+  const r = await api("/api/search-recipes", { query:q });
+  out.innerText = r.result || r.error;
+}
+
+
+/* ====== SHOPPING ====== */
+async function getShoppingList() {
+  const txt = document.getElementById("shopping-menu-input").value;
+  const out = document.getElementById("shopping-output");
+  out.innerText = "Генерую...";
+  const r = await api("/api/shoppinglist", { menuText:txt });
+  out.innerText = r.result || r.error;
+}
+
+
+/* ====== PDF ====== */
+async function parsePdf() {
+  const file = document.getElementById("pdf-file").files[0];
+  const out = document.getElementById("pdf-output");
+
+  if (!file) { out.innerText = "Виберіть файл"; return; }
+
+  out.innerText = "Обробляю PDF...";
+
+  const fd = new FormData();
+  fd.append("file", file);
+
+  const r = await api("/api/parse-pdf", fd, true);
+  out.innerText = r.result || r.error;
+}
+
+
+/* ====== VISION ====== */
+async function analyzeImage() {
+  const file = document.getElementById("vision-file").files[0];
+  const out = document.getElementById("vision-output");
+
+  if (!file) { out.innerText = "Виберіть фото"; return; }
+
+  out.innerText = "AI аналізує...";
+
+  const fd = new FormData();
+  fd.append("image", file);
+
+  const r = await api("/api/analyze-image", fd, true);
+  out.innerText = r.result || r.error;
+}
+
+</script>
+
+</body>
+</html>
+
