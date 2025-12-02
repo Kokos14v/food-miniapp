@@ -1,0 +1,95 @@
+cd "/Users/vanyakosovych/Desktop/food-miniapp 2"
+nano bot.jsnano bot.jsimport TelegramBot from "node-telegram-bot-api";
+
+// 🔐 ВСТАВ СВОЙ ТОКЕН ТУТ
+const TOKEN = "ВСТАВ_ТУТ_СВІЙ_ТОКЕН";
+
+// 🌐 URL твого Mini App
+const MINI_APP_URL = "https://food-miniapp.onrender.com";
+
+// Створюємо бота
+const bot = new TelegramBot(TOKEN, { polling: true });
+
+console.log("🤖 Coconut AI Bot запущений...");
+
+// Анімовані емодзі
+const animate = (emoji) => `${emoji} ${emoji} ${emoji}`;
+
+// ----------- /START МЕНЮ -----------
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+
+  const welcome =
+`🌴 *Coconut AI* — найрозумніший кулінарний помічник 🍈✨
+
+${animate("⚡")} *Все, що ти можеш робити тут:*
+• 🍳 Отримати рецепти
+• 🥗 Створити меню
+• 🛒 Отримати список покупок
+• 📸 Аналізувати фото продуктів
+• 🤖 Отримати рекомендації від AI
+
+Натисни кнопку нижче, щоб відкрити мініапку 👇`;
+
+  bot.sendMessage(chatId, welcome, {
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "✨ Відкрити Coconut AI",
+            web_app: { url: MINI_APP_URL }
+          }
+        ]
+      ]
+    }
+  });
+
+  // Надсилаємо кнопки Vision Pro стилю (3D-гель)
+  bot.sendMessage(chatId, "Обери дію з меню:", {
+    reply_markup: {
+      keyboard: [
+        [{ text: "🍳 Рецепти ✨" }],
+        [{ text: "🥗 Меню 🌈" }],
+        [{ text: "🔍 Пошук 🔎" }],
+        [{ text: "🛒 Покупки 🛍️" }],
+        [{ text: "📸 Фото 💥" }],
+        [{ text: "🤖 AI Рекомендації ⚡" }]
+      ],
+      resize_keyboard: true
+    }
+  });
+});
+
+// ----------- ОБРОБКА КНОПОК -----------
+
+bot.on("message", (msg) => {
+  const text = msg.text;
+  const chatId = msg.chat.id;
+
+  if (!text) return;
+
+  if (text.includes("Рецепти")) {
+    bot.sendMessage(chatId, "🍳 *Відкриваю рецепти...*", { parse_mode: "Markdown" });
+  }
+
+  if (text.includes("Меню")) {
+    bot.sendMessage(chatId, "🥗 *Генерую меню...*", { parse_mode: "Markdown" });
+  }
+
+  if (text.includes("Пошук")) {
+    bot.sendMessage(chatId, "🔍 *Що хочеш знайти?*", { parse_mode: "Markdown" });
+  }
+
+  if (text.includes("Покупки")) {
+    bot.sendMessage(chatId, "🛒 *Формую список покупок...*", { parse_mode: "Markdown" });
+  }
+
+  if (text.includes("Фото")) {
+    bot.sendMessage(chatId, "📸 *Надішли фото продукту — я проаналізую!*", { parse_mode: "Markdown" });
+  }
+
+  if (text.includes("AI Рекомендації")) {
+    bot.sendMessage(chatId, "🤖 *Пиши, що хочеш приготувати!*", { parse_mode: "Markdown" });
+  }
+});

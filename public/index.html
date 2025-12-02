@@ -2,245 +2,226 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Coconut AI Food Miniapp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coconut AI</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
+    /* ========= PREMIUM COCONUT UI 3.0 ========= */
+
     :root {
-      --tq: #13e8c8;
-      --tq-soft: #39c5b8;
-      --bg1: #050816;
-      --bg2: #031018;
-      --glass: rgba(255,255,255,0.12);
-      --glass-border: rgba(255,255,255,0.32);
-      --text: #ffffff;
-      --text-muted: #cdd3df;
+      /* Deep Premium Gradient */
+      --bg1: #001615;
+      --bg2: #002325;
+      --bg3: #003136;
+
+      /* Glass */
+      --glass: rgba(255, 255, 255, 0.08);
+      --glass-strong: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.18);
+
+      /* Coconut Neon Accent */
+      --accent: #0BFFCC;
+      --accent-glow: rgba(11,255,204,0.5);
+      --accent-soft: rgba(11,255,204,0.22);
+
+      --radius: 28px;
+
+      --text: #F9FEFF;
+      --muted: #B8D5D2;
     }
 
+    /* BACKGROUND */
     body {
       margin: 0;
-      font-family: system-ui, sans-serif;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      padding: 0;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2), var(--bg3));
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
       color: var(--text);
-      padding: 16px;
+      overflow-x: hidden;
     }
 
-    /* -----------------------------------
-       WELCOME BLOCK + ANIMATION
-    ----------------------------------- */
-    @keyframes fadeSlideUp {
-      0% { opacity: 0; transform: translateY(20px); }
-      60% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 1; transform: none; }
+    /* ======= PREMIUM HEADER ======= */
+    .header {
+      margin: 28px;
+      padding: 26px 20px;
+      border-radius: 32px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(26px);
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+
+      position: relative;
+      z-index: 3;
     }
 
-    @keyframes popIn {
-      0% { transform: scale(0.85); opacity: 0; }
-      70% { transform: scale(1.03); opacity: 1; }
+    /* ====== BREATHING LOGO ====== */
+    .logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+
+      background: radial-gradient(circle at center,
+          rgba(11, 255, 204, 0.45),
+          rgba(11, 255, 204, 0.15),
+          transparent 70%);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      box-shadow:
+        0 0 35px rgba(11,255,204,0.55),
+        0 0 60px rgba(11,255,204,0.35),
+        0 0 90px rgba(11,255,204,0.25),
+        inset 0 0 18px rgba(255,255,255,0.12);
+
+      animation: breathing 3.8s ease-in-out infinite;
+    }
+
+    @keyframes breathing {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.06); }
       100% { transform: scale(1); }
     }
 
-    .welcome-simple {
-      animation: fadeSlideUp 0.8s ease-out forwards;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 18px;
-      text-align: center;
-      margin-bottom: 20px;
+    .logo img {
+      width: 78%;
+      height: 78%;
+      border-radius: 50%;
+      object-fit: cover;
+
+      filter:
+        drop-shadow(0 0 14px rgba(11,255,204,0.40))
+        drop-shadow(0 0 6px rgba(11,255,204,0.25));
     }
 
-    .welcome-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--tq);
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
     }
 
-    .welcome-text {
-      margin-top: 8px;
+    .header p {
+      margin: 6px 0 0;
       font-size: 15px;
-      color: var(--text-muted);
-      line-height: 1.5;
+      color: var(--muted);
     }
 
-    .welcome-btn {
-      margin-top: 15px;
-      animation: popIn 0.6s ease-out 0.8s both;
-      background: var(--tq);
-      border: none;
-      border-radius: 14px;
-      padding: 14px;
-      width: 100%;
-      font-size: 16px;
-      color: #000;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 0 16px rgba(19,232,200,0.3);
+    /* ======= MENU GRID ======= */
+    .grid {
+      margin: 32px 28px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
     }
 
-    /* -----------------------------------
-       BLOCK STYLES
-    ----------------------------------- */
+    /* ======= PREMIUM BUTTON CAPSULES ======= */
     .card {
-      background: var(--glass);
-      border-radius: 18px;
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(12px);
-      padding: 16px;
-      margin-bottom: 18px;
-    }
+      padding: 22px;
 
-    .card-title {
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.03)
+      );
+
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(22px);
+
+      text-align: center;
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 6px;
-      color: var(--tq);
-    }
 
-    .card-sub {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-    }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-    textarea, input[type="text"], input[type="file"] {
-      width: 100%;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: var(--text);
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .btn {
-      width: 100%;
-      background: var(--tq);
-      border: none;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      color: black;
       cursor: pointer;
+      transition: 0.25s ease;
+
+      box-shadow:
+        inset 0 0 15px rgba(255,255,255,0.04),
+        0 12px 35px rgba(0,0,0,0.35);
     }
 
-    .output {
-      margin-top: 10px;
-      padding: 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px dashed rgba(255,255,255,0.2);
-      font-size: 13px;
-      min-height: 40px;
-      white-space: pre-wrap;
+    .card:hover {
+      transform: translateY(-10px) scale(1.04);
+      border-color: var(--accent);
+      box-shadow:
+        0 0 20px var(--accent-glow),
+        0 0 45px var(--accent-soft);
     }
+
+    .card:active {
+      transform: scale(0.94);
+    }
+
+    .icon {
+      font-size: 34px;
+      margin-bottom: 10px;
+      color: var(--accent);
+      filter: drop-shadow(0 0 6px var(--accent-soft));
+    }
+
   </style>
 </head>
 
 <body>
 
-  <!-- WELCOME BLOCK -->
-  <div class="welcome-simple">
-    <div class="welcome-title">Привіт! 👋</div>
-    <div class="welcome-text">
-      Тут ти отримаєш багато корисного для себе.<br>
-      Щоб почати — натисни кнопку <b>Coconut AI</b> нижче.
+  <!-- PREMIUM HEADER -->
+  <div class="header">
+    <div class="logo">
+      <img src="logo.png" alt="Coconut Logo">
     </div>
-
-    <button class="welcome-btn" onclick="scrollToActions()">
-      🌴 Відкрити Coconut AI
-    </button>
+    <h1>FoodHelper Coconut AI</h1>
+    <p>Скляний дизайн • Преміум Neon • AI</p>
   </div>
 
-  <!-- CHAT -->
-  <div id="actions">
-    <div class="card">
-      <div class="card-title">🧠 AI-чат</div>
-      <div class="card-sub">Питай що хочеш — рецепти, поради, калорії, заміни.</div>
-
-      <textarea id="chat-input" placeholder="Напиши своє питання..."></textarea>
-      <button class="btn" id="chat-send">Надіслати</button>
-
-      <div id="chat-output" class="output" style="display:none;"></div>
+  <!-- PREMIUM MENU GRID -->
+  <div class="grid">
+    
+    <div class="card" onclick="openMode('recipe')">
+      <div class="icon">🍳</div>
+      Рецепти
     </div>
 
-    <!-- SEARCH -->
-    <div class="card">
-      <div class="card-title">🔎 Пошук рецепту</div>
-      <input id="search-input" type="text" placeholder="Наприклад: паста з куркою">
-      <button class="btn" id="search-run">Знайти рецепт</button>
-      <div id="search-results" class="output"></div>
+    <div class="card" onclick="openMode('menu')">
+      <div class="icon">🥗</div>
+      Меню
     </div>
 
-    <!-- VISION -->
-    <div class="card">
-      <div class="card-title">📸 Аналіз фото продукту</div>
-      <input id="vision-file" type="file" accept="image/*">
-      <button class="btn" id="vision-run">Проаналізувати</button>
-      <div id="vision-output" class="output"></div>
+    <div class="card" onclick="openMode('search')">
+      <div class="icon">🔍</div>
+      Пошук
     </div>
 
-    <!-- PRODUCT FINDER -->
-    <div class="card">
-      <div class="card-title">🛒 Підібрати інгредієнти</div>
-      <input id="product-input" type="text" placeholder="Наприклад: безлактозне молоко">
-      <button class="btn" id="product-run">Знайти товар</button>
-      <div id="product-output" class="output"></div>
+    <div class="card" onclick="openMode('shopping')">
+      <div class="icon">🛍️</div>
+      Покупки
     </div>
+
+    <div class="card" onclick="openMode('pdf')">
+      <div class="icon">📄</div>
+      PDF
+    </div>
+
+    <div class="card" onclick="openMode('vision')">
+      <div class="icon">📸</div>
+      Фото
+    </div>
+
   </div>
 
 <script>
-function scrollToActions() {
-  document.getElementById("actions").scrollIntoView({ behavior: "smooth" });
+Telegram.WebApp.ready();
+function openMode(mode) {
+  Telegram.WebApp.sendData(JSON.stringify({ open: mode }));
 }
-
-async function api(path, body, isFormData = false) {
-  const opts = {
-    method: "POST",
-    headers: isFormData ? {} : { "Content-Type": "application/json" },
-    body: isFormData ? body : JSON.stringify(body)
-  };
-  const res = await fetch(path, opts);
-  return res.json();
-}
-
-// CHAT
-document.getElementById("chat-send").onclick = async () => {
-  const text = chat-input.value.trim();
-  if (!text) return;
-  chat-output.style.display = "block";
-  chat-output.innerText = "Думаю…";
-  const r = await api("/api/chat", { message: text });
-  chat-output.innerText = r.answer || "Помилка";
-};
-
-// SEARCH
-document.getElementById("search-run").onclick = async () => {
-  const q = search-input.value.trim();
-  if (!q) return;
-  const r = await api("/api/search", { query: q });
-  search-results.innerText = JSON.stringify(r, null, 2);
-};
-
-// VISION
-document.getElementById("vision-run").onclick = async () => {
-  const f = vision-file.files[0];
-  if (!f) return;
-  const fd = new FormData();
-  fd.append("image", f);
-  const r = await api("/api/analyze-image", fd, true);
-  vision-output.innerText = r.result || "Помилка";
-};
-
-// PRODUCTS
-document.getElementById("product-run").onclick = async () => {
-  const txt = product-input.value.trim();
-  const r = await api("/api/find-product", { ingredient: txt });
-  product-output.innerText = r.link || "Помилка";
-};
 </script>
 
 </body>
