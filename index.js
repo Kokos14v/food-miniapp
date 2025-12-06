@@ -1,317 +1,258 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import pdfParse from "pdf-parse";
 import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// ================== БАЗОВІ ШЛЯХИ ==================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
-// 🔑 ВСТАВ СВОЙ КЛЮЧ АБО ВИКОРИСТАЙ ENV
+// ================== OPENAI КЛІЄНТ ==================
+// 🔑 ВАЖЛИВО: постав свій ключ у змінній середовища OPENAI_API_KEY
+// або заміни рядок нижче на свій ключ (не раджу комітити в GitHub)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "ENTER_YOUR_OPENAI_KEY"
+  apiKey: process.env.OPENAI_API_KEY || "ENTER_YOUR_OPENAI_KEY",
 });
 
+// ================== MIDDLEWARE ==================
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-// ---------- ФІКСОВАНІ РЕЦЕПТИ З JSON ----------
-const recipesPath = path.join(__dirname, "data", "recipes.json");
-let RECIPES = [];
-try {
-  const raw = fs.readFileSync(recipesPath, "utf8");
-  RECIPES = JSON.parse(raw);
-  console.log(`Loaded ${RECIPES.length} recipes from data/recipes.json`);
-} catch (e) {
-  console.error("❌ Помилка завантаження recipes.json:", e.message);
+// Статика — Telegram Mini App фронтенд, картинки, стилі
+app.use(express.static(path.join(__dirname, "public")));
+
+// ================== ЗАВАНТАЖЕННЯ РЕЦЕПТІВ ==================
+
+const RECIPES_PATH = path.join(__dirname, "data", "recipes_with_images.json");
+let recipes = [];
+
+function loadRecipes() {
+  try {
+    const fileRaw = fs.readFileSync(RECIPES_PATH, "utf8");
+    const parsed = JSON.parse(fileRaw);
+
+    if (Array.isArray(parsed)) {
+      recipes = parsed;
+    } else if (Array.isArray(parsed.recipes)) {
+      recipes = parsed.recipes;
+    } else {
+      console.warn("⚠️ Неочікуваний формат recipes_with_images.json, використовую порожній список.");
+      recipes = [];
+    }
+
+    console.log(`✅ Loaded ${recipes.length} recipes from data/recipes_with_images.json`);
+  } catch (err) {
+    console.error("❌ Error loading recipes_with_images.json:", err.message);
+    recipes = [];
+  }
 }
 
-function getRecipesByCategory(category) {
-  return RECIPES.filter(r => r.category === category);
-}
-function getRandomFrom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+loadRecipes();
+
+// ================== ДОПОМІЖНІ ФУНКЦІЇ ==================
+
+// Витягти список інгредієнтів з рецепту (підтримка різних схем)
+function getIngredientList(recipe) {
+  if (!recipe) return [];
+
+  if (Array.isArray(recipe.ingredients)) {
+    return recipe.ingredients;
+  }
+  if (Array.isArray(recipe.ingredientsList)) {
+    return recipe.ingredientsList;
+  }
+  if (typeof recipe.ingredients_text === "string") {
+    return recipe.ingredients_text
+      .split(/\r?\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (typeof recipe.ingredientsText === "string") {
+    return recipe.ingredientsText
+      .split(/\r?\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
-async function callChat(model, system, userContent) {
-  const completion = await openai.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: userContent }
-    ]
+// Зробити Instacart-посилання з інгредієнтів
+function buildInstacartUrl(ingredients) {
+  if (!ingredients || ingredients.length === 0) {
+    return "https://www.instacart.com";
+  }
+  const query = ingredients.join(", ");
+  const encoded = encodeURIComponent(query);
+  return `https://www.instacart.com/store/search?q=${encoded}`;
+}
+
+// ================== API: СПИСОК РЕЦЕПТІВ ==================
+
+/**
+ * GET /api/recipes
+ * Повертає список рецептів (коротка форма) для меню:
+ *  - id
+ *  - title
+ *  - image (якщо є)
+ */
+app.get("/api/recipes", (req, res) => {
+  const list = recipes.map((r, index) => ({
+    id: r.id ?? index,
+    title: r.title ?? r.name ?? `Рецепт #${index + 1}`,
+    image: r.image || null,
+  }));
+
+  res.json(list);
+});
+
+// ================== API: ОДИН РЕЦЕПТ ==================
+
+/**
+ * GET /api/recipes/:id
+ * Деталі по одному рецепту:
+ *  - id, title, description, ingredients
+ *  - image (якщо є)
+ *  - instacartUrl
+ */
+app.get("/api/recipes/:id", (req, res) => {
+  const recipeId = req.params.id;
+  let recipe = null;
+
+  // id може бути числовим індексом або id з JSON
+  if (/^\d+$/.test(recipeId)) {
+    const index = Number(recipeId);
+    recipe = recipes.find((r) => String(r.id) === recipeId) ?? recipes[index];
+  } else {
+    recipe = recipes.find((r) => String(r.id) === recipeId);
+  }
+
+  if (!recipe) {
+    return res.status(404).json({ error: "Recipe not found" });
+  }
+
+  const ingredients = getIngredientList(recipe);
+  const instacartUrl = buildInstacartUrl(ingredients);
+
+  const response = {
+    id: recipe.id ?? recipeId,
+    title: recipe.title ?? recipe.name ?? "Без назви",
+    description: recipe.description ?? recipe.text ?? null,
+    ingredients,
+    image: recipe.image || null, // відносний шлях типу /recipes/recipe_12.webp
+    instacartUrl,
+  };
+
+  res.json(response);
+});
+
+// ================== API: ПОШУК РЕЦЕПТІВ ==================
+
+/**
+ * GET /api/search?q=курка
+ * Пошук по назві + інгредієнтах
+ */
+app.get("/api/search", (req, res) => {
+  const q = (req.query.q || "").toString().trim().toLowerCase();
+
+  if (!q) {
+    return res.json([]);
+  }
+
+  const results = recipes.filter((r, index) => {
+    const title = (r.title || r.name || `Рецепт #${index + 1}`).toLowerCase();
+    const ingredients = getIngredientList(r)
+      .join(" ")
+      .toLowerCase();
+
+    return title.includes(q) || ingredients.includes(q);
   });
-  return completion.choices[0].message.content;
-}
 
-// =============== 1) CHAT COMPLETIONS ===============
-// Загальний чат, якщо захочеш використати в UI
-app.post("/api/chat", async (req, res) => {
-  try {
-    const { message } = req.body;
-    const system = "Ти FoodHelper Coconut — асистент з харчування, рецептів, продуктів і шопінгу.";
-    const answer = await callChat("gpt-4o-mini", system, message || "");
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 2) РЕЦЕПТИ З ФІКСОВАНОЇ БАЗИ ===============
-app.post("/api/recipe", async (req, res) => {
-  try {
-    const { type } = req.body; // breakfast / lunch / dinner / snack
-    const list = getRecipesByCategory(type);
-    if (!list.length) {
-      return res.json({ ok: false, error: "Немає рецептів для цієї категорії" });
-    }
-    const recipe = getRandomFrom(list);
-    const text = [
-      `### ${recipe.title}`,
-      "",
-      "Інгредієнти:",
-      ...(recipe.ingredients || []).map(i => `- ${i}`),
-      "",
-      "Кроки:",
-      ...(recipe.steps || []).map((s, i) => `${i + 1}. ${s}`)
-    ].join("\n");
-
-    res.json({ ok: true, result: text });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 3) EMBEDDINGS: ПОШУК РЕЦЕПТІВ ===============
-app.post("/api/search-recipes", async (req, res) => {
-  try {
-    const { query } = req.body;
-    if (!query) return res.json({ ok: false, error: "Порожній запит" });
-
-    const embedModel = "text-embedding-3-small";
-
-    // Вектор запиту
-    const qEmbRes = await openai.embeddings.create({
-      model: embedModel,
-      input: query
-    });
-    const qVec = qEmbRes.data[0].embedding;
-
-    // Вектори рецептів (на льоту — ок для невеликої бази)
-    const recipeTexts = RECIPES.map(
-      r => `${r.title}\n${(r.ingredients || []).join(", ")}\n${(r.steps || []).join(" ")}`
-    );
-
-    const rEmbRes = await openai.embeddings.create({
-      model: embedModel,
-      input: recipeTexts
-    });
-
-    function cosine(a, b) {
-      let dot = 0, na = 0, nb = 0;
-      for (let i = 0; i < a.length; i++) {
-        dot += a[i] * b[i];
-        na += a[i] * a[i];
-        nb += b[i] * b[i];
-      }
-      return dot / (Math.sqrt(na) * Math.sqrt(nb));
-    }
-
-    const scored = RECIPES.map((r, idx) => ({
-      recipe: r,
-      score: cosine(qVec, rEmbRes.data[idx].embedding)
+  res.json(
+    results.map((r, index) => ({
+      id: r.id ?? index,
+      title: r.title ?? r.name ?? `Рецепт #${index + 1}`,
+      image: r.image || null,
     }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+  );
+});
 
-    const lines = scored.map((item, i) => {
-      const r = item.recipe;
-      return `${i + 1}. ${r.title} (score ${item.score.toFixed(3)})`;
+// ================== AI-КАРТИНКА, ЯКЩО ФОТО НЕМА ==================
+
+/**
+ * POST /api/recipes/:id/generate-image
+ * Якщо рецепт без фото — генеруємо через OpenAI
+ * Відповідь: { imageBase64: "data:image/png;base64,..." }
+ */
+app.post("/api/recipes/:id/generate-image", async (req, res) => {
+  const recipeId = req.params.id;
+
+  let recipe = null;
+  if (/^\d+$/.test(recipeId)) {
+    const index = Number(recipeId);
+    recipe = recipes.find((r) => String(r.id) === recipeId) ?? recipes[index];
+  } else {
+    recipe = recipes.find((r) => String(r.id) === recipeId);
+  }
+
+  if (!recipe) {
+    return res.status(404).json({ error: "Recipe not found" });
+  }
+
+  // Якщо вже є фото з PDF — просто повертаємо 409
+  if (recipe.image) {
+    return res.status(409).json({ error: "Recipe already has an image", image: recipe.image });
+  }
+
+  const title = recipe.title ?? recipe.name ?? "страва";
+  const ingredients = getIngredientList(recipe);
+
+  const prompt = `
+Фуд-фото для кулінарної книги. Страва: "${title}".
+Інгредієнти: ${ingredients.join(", ")}.
+Сучасний світлий стиль, виглядає смачно та професійно, вид зверху або 3/4.
+  `.trim();
+
+  try {
+    const img = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "512x512",
     });
 
-    res.json({
-      ok: true,
-      result: `Найрелевантніші рецепти:\n\n${lines.join("\n")}`
-    });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
+    const b64 = img.data[0].b64_json;
+    const dataUrl = `data:image/png;base64,${b64}`;
+
+    return res.json({ imageBase64: dataUrl });
+  } catch (err) {
+    console.error("❌ Error generating image:", err);
+    return res.status(500).json({ error: "Failed to generate image" });
   }
 });
 
-// =============== 4) МЕНЮ (AI, але тільки з твоїх рецептів) ===============
-app.post("/api/menu-today", async (req, res) => {
-  try {
-    const system = `
-      Ти планувальник харчування.
-      Використовуй ТІЛЬКИ рецепти з JSON, який я даю.
-      Зроби меню на сьогодні: сніданок, обід, вечеря, перекус.
-      Формат списком, без вигаданих назв.
-    `;
-    const user = `Ось список рецептів:\n\n${JSON.stringify(RECIPES, null, 2)}`;
-    const answer = await callChat("gpt-4o-mini", system, user);
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
+// ================== ЗАГАЛЬНІ СЕРВІСНІ РОУТИ ==================
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", recipesCount: recipes.length });
 });
 
-app.post("/api/menu-week", async (req, res) => {
-  try {
-    const system = `
-      Ти планувальник харчування.
-      Використовуй ТІЛЬКИ ці рецепти.
-      Зроби меню на 7 днів (сніданок, обід, вечеря, перекус).
-      Наприкінці додай попередній список покупок.
-    `;
-    const user = `Ось список рецептів:\n\n${JSON.stringify(RECIPES, null, 2)}`;
-    const answer = await callChat("gpt-4o-mini", system, user);
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
+// Фолбек — віддати фронтенд (якщо потім буде SPA)
+app.get("*", (req, res, next) => {
+  // Якщо це запит на файл (картинка/скрипт) — пропустити до express.static
+  if (req.path.startsWith("/api") || req.path.includes(".")) {
+    return next();
   }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// =============== 5) СПИСОК ПОКУПОК (AI) ===============
-app.post("/api/shoppinglist", async (req, res) => {
-  try {
-    const { menuText } = req.body;
-    const system = `
-      Ти асистент, який перетворює меню на список покупок.
-      Віддай структуровано: Овочі, Фрукти, М'ясо, Молочка, Крупи, Інше.
-    `;
-    const user = `Ось меню:\n\n${menuText}`;
-    const answer = await callChat("gpt-4o-mini", system, user);
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
+// ================== ЗАПУСК СЕРВЕРА ==================
 
-// =============== 6) ВІДОМОСТІ ПРО ПРОДУКТ (AI) ===============
-app.post("/api/product-info", async (req, res) => {
-  try {
-    const { productName } = req.body;
-    const system = `
-      Ти нутриціолог.
-      Опиши продукт: калорійність на 100 г, БЖВ, користь, ризики.
-      Пиши коротко і структуровано.
-    `;
-    const user = `Продукт: ${productName}`;
-    const answer = await callChat("gpt-4o-mini", system, user);
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 7) FILE/PDF: ПАРСИНГ РЕЦЕПТІВ ===============
-app.post("/api/parse-pdf", upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) return res.json({ ok: false, error: "Файл не надіслано" });
-    const dataBuffer = fs.readFileSync(req.file.path);
-    const pdfData = await pdfParse(dataBuffer);
-    const pdfText = pdfData.text;
-
-    const system = `
-      Ти парсер кулінарних рецептів.
-      Витягни з тексту рецепти в Markdown: Назва, інгредієнти, кроки.
-    `;
-    const user = `Ось текст PDF:\n\n${pdfText}`;
-    const answer = await callChat("gpt-4o-mini", system, user);
-
-    fs.unlinkSync(req.file.path);
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 8) VISION: АНАЛІЗ ФОТО ПРОДУКТУ ===============
-app.post("/api/analyze-image", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.json({ ok: false, error: "Завантаж зображення" });
-    }
-
-    const imgBuffer = fs.readFileSync(req.file.path);
-    const base64 = imgBuffer.toString("base64");
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content: "Ти нутриціолог. Описуєш продукт на фото: що це, як можна використати в рецептах, приблизна калорійність, порада."
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Проаналізуй цей продукт." },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64}` }
-            }
-          ]
-        }
-      ]
-    });
-
-    fs.unlinkSync(req.file.path);
-    const answer = completion.choices[0].message.content;
-    res.json({ ok: true, result: answer });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 9) AI-ПІДБІР ТОВАРУ В МАГАЗИНАХ ===============
-app.post("/api/find-product", async (req, res) => {
-  try {
-    const { ingredient, store } = req.body;
-    const storeName = store || "Instacart";
-
-    const domain = {
-      Instacart: "instacart.com",
-      Amazon: "amazon.com",
-      Walmart: "walmart.com",
-      iHerb: "iherb.com"
-    }[storeName] || "instacart.com";
-
-    const system = `
-      Ти асистент з онлайн-шопінгу.
-      За назвою інгредієнта знайди найвідповідніший продукт на сайті ${domain}.
-      ПОВЕРТАЙ ТІЛЬКИ ОДИН URL (посилання) без пояснень, тексту, коментарів.
-      Якщо не впевнений — все одно дай найкращий варіант.
-    `;
-    const user = `Інгредієнт: ${ingredient}\nМагазин: ${storeName}`;
-
-    const answer = await callChat("gpt-4.1-mini", system, user);
-    const url = (answer || "").trim().split(/\s+/)[0];
-
-    res.json({ ok: true, url });
-  } catch (e) {
-    console.error(e);
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// =============== 10) ЗАПУСК СЕРВЕРА ===============
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Food miniapp listening on http://localhost:${PORT}`);
