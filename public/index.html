@@ -8,10 +8,6 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    /* ==========================
-       COCONUT PREMIUM UI 4.0
-       ========================== */
-
     :root {
       --bg1: #001212;
       --bg2: #002022;
@@ -27,11 +23,7 @@
       --text: #F9FEFF;
       --muted: #B8D5D2;
 
-      --radius: 30px;
-    }
-
-    * {
-      box-sizing: border-box;
+      --radius: 24px;
     }
 
     body {
@@ -45,510 +37,155 @@
 
     /* HEADER */
     .header {
-      margin: 26px;
-      padding: 26px 22px;
-
+      margin: 22px;
+      padding: 22px 18px;
       background: var(--glass);
-      border-radius: 34px;
+      border-radius: 30px;
       border: 1px solid var(--glass-border);
-      backdrop-filter: blur(28px);
-
+      backdrop-filter: blur(24px);
       text-align: center;
-      box-shadow: 0 22px 60px rgba(0,0,0,0.45);
-      animation: fadeIn 0.6s ease-out;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.4);
     }
 
-    /* LOGO — VisionOS breathing neon */
+    /* LOGO */
     .logo {
-      width: 110px;
-      height: 110px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
-      margin: 0 auto 16px;
-
-      background: radial-gradient(circle,
-        rgba(11,255,204,0.55),
-        rgba(11,255,204,0.25),
-        transparent 70%);
-
+      margin: 0 auto 12px;
+      background: radial-gradient(circle, rgba(11,255,204,0.5), rgba(11,255,204,0.2), transparent 70%);
       box-shadow:
-        0 0 50px rgba(11,255,204,0.55),
-        0 0 100px rgba(11,255,204,0.35),
-        inset 0 0 25px rgba(255,255,255,0.12);
-
+        0 0 32px rgba(11,255,204,0.55),
+        0 0 70px rgba(11,255,204,0.3),
+        inset 0 0 20px rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-
-      animation: breathing 4s ease-in-out infinite;
-    }
-
-    .logo img {
-      width: 78%;
-      height: 78%;
-      border-radius: 50%;
-      filter: drop-shadow(0 0 18px rgba(11,255,204,0.45));
+      animation: breathing 3.8s ease-in-out infinite;
     }
 
     @keyframes breathing {
       0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
+      50% { transform: scale(1.06); }
       100% { transform: scale(1); }
+    }
+
+    .logo img {
+      width: 74%;
+      height: 74%;
+      border-radius: 50%;
+      filter: drop-shadow(0 0 14px rgba(11,255,204,0.4));
     }
 
     .header h1 {
       margin: 0;
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
-      letter-spacing: -0.6px;
     }
 
     .header p {
-      margin-top: 8px;
       color: var(--muted);
-      font-size: 16px;
+      font-size: 14px;
+      margin: 6px 0 0;
     }
 
-    /* MENU GRID */
+    /* COMPACT MENU GRID */
     .grid {
-      margin: 35px 26px 20px;
+      margin: 24px 22px 16px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 22px;
-      animation: fadeIn 1s ease-out;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 16px;
     }
 
     .card {
-      padding: 26px 20px;
-      background: linear-gradient(
-          135deg,
-          rgba(255,255,255,0.05),
-          rgba(255,255,255,0.025)
-      );
+      padding: 18px 14px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
       border-radius: var(--radius);
-      border: 1px solid rgba(255,255,255,0.12);
-      backdrop-filter: blur(24px);
-
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px);
       text-align: center;
-      font-size: 19px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text);
-
       display: flex;
       flex-direction: column;
       align-items: center;
-
       cursor: pointer;
       transition: all 0.25s ease;
-      box-shadow:
-        inset 0 0 18px rgba(255,255,255,0.03),
-        0 15px 40px rgba(0,0,0,0.35);
+      box-shadow: inset 0 0 12px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.3);
     }
 
     .card:hover {
-      transform: translateY(-10px) scale(1.05);
+      transform: translateY(-6px) scale(1.04);
       border-color: var(--accent);
-      box-shadow:
-        0 0 30px var(--accent-glow),
-        0 0 60px rgba(11,255,204,0.25);
+      box-shadow: 0 0 22px var(--accent-glow), 0 0 40px rgba(11,255,204,0.22);
     }
 
     .card:active {
-      transform: scale(0.93);
+      transform: scale(0.94);
     }
 
     .icon {
-      font-size: 40px;
-      margin-bottom: 14px;
+      font-size: 30px;
+      margin-bottom: 8px;
       color: var(--accent);
-      filter: drop-shadow(0 0 8px var(--accent-soft));
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    /* =======================
-       INNER SCREENS
-       ======================= */
-    .screens {
-      margin: 0 26px 40px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .screen {
-      display: none;
-      animation: screenIn 0.35s ease-out;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    @keyframes screenIn {
-      0% { opacity: 0; transform: translateY(18px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    .screen-card {
-      padding: 24px 20px 26px;
-      border-radius: 32px;
-      background: linear-gradient(
-        135deg,
-        rgba(255,255,255,0.05),
-        rgba(255,255,255,0.018)
-      );
-      border: 1px solid var(--glass-border);
-      backdrop-filter: blur(24px);
-      box-shadow:
-        inset 0 0 20px rgba(255,255,255,0.02),
-        0 18px 45px rgba(0,0,0,0.45);
-    }
-
-    .screen-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .screen-header-icon {
-      font-size: 26px;
-      filter: drop-shadow(0 0 5px var(--accent-soft));
-    }
-
-    .screen-title {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
-    .screen-subtitle {
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .field-label {
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .field {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: radial-gradient(circle at top left,
-        rgba(255,255,255,0.06),
-        rgba(0,0,0,0.45)
-      );
-      color: var(--text);
-      font-size: 15px;
-      outline: none;
-      margin-bottom: 12px;
-      backdrop-filter: blur(18px);
-    }
-
-    .field::placeholder {
-      color: #7d9b96;
-    }
-
-    textarea.field {
-      resize: vertical;
-      min-height: 70px;
-      max-height: 150px;
-    }
-
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .pill {
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(0,0,0,0.45);
-      font-size: 13px;
-      color: var(--muted);
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .pill.active,
-    .pill:hover {
-      border-color: var(--accent);
-      background: rgba(11,255,204,0.15);
-      color: var(--text);
-      box-shadow: 0 0 14px var(--accent-soft);
-    }
-
-    .primary-btn {
-      width: 100%;
-      margin-top: 10px;
-      padding: 13px 16px;
-      border-radius: 18px;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
-      color: #002422;
-      cursor: pointer;
-      background: linear-gradient(135deg, #0BFFCC, #47ffe4);
-      box-shadow:
-        0 12px 32px rgba(11,255,204,0.45),
-        0 0 14px rgba(11,255,204,0.75);
-      transition: 0.18s ease-out;
-    }
-
-    .primary-btn:active {
-      transform: scale(0.96) translateY(1px);
-      box-shadow:
-        0 6px 18px rgba(0,0,0,0.6),
-        0 0 6px rgba(11,255,204,0.7);
-    }
-
-    .hint {
-      margin-top: 10px;
-      font-size: 13px;
-      color: var(--muted);
-      opacity: 0.9;
-    }
-
-    @media (max-width: 600px) {
-      .header {
-        margin: 18px;
-        padding: 22px 18px;
-      }
-      .grid {
-        margin: 26px 18px 14px;
-        gap: 16px;
-      }
-      .screens {
-        margin: 0 18px 30px;
-      }
+      filter: drop-shadow(0 0 6px var(--accent-soft));
     }
   </style>
 </head>
 
 <body>
-
   <!-- HEADER -->
   <div class="header">
     <div class="logo">
-      <img src="logo.png" alt="Coconut Logo">
+      <img src="logo.png" alt="Coconut Logo" />
     </div>
     <h1>FoodHelper Coconut AI</h1>
-    <p>Преміум дизайн • Neon Glass • AI</p>
+    <p>Преміум-дизайн • VisionOS • AI</p>
   </div>
 
-  <!-- MAIN MENU -->
+  <!-- MENU -->
   <div class="grid">
-    <div class="card" onclick="openMode('recipe')">
+    <div class="card" data-action="recipe">
       <div class="icon">🍳</div>
       Рецепти
     </div>
 
-    <div class="card" onclick="openMode('menu')">
+    <div class="card" data-action="menu">
       <div class="icon">🥗</div>
       Меню
     </div>
 
-    <div class="card" onclick="openMode('search')">
+    <div class="card" data-action="search">
       <div class="icon">🔍</div>
       Пошук
     </div>
 
-    <div class="card" onclick="openMode('shopping')">
+    <div class="card" data-action="shopping">
       <div class="icon">🛍️</div>
       Покупки
     </div>
 
-    <div class="card" onclick="openMode('pdf')">
+    <div class="card" data-action="pdf">
       <div class="icon">📄</div>
       PDF
     </div>
 
-    <div class="card" onclick="openMode('vision')">
+    <div class="card" data-action="vision">
       <div class="icon">📸</div>
       Фото
     </div>
   </div>
 
-  <!-- INNER PAGES -->
-  <div class="screens">
+  <script>
+    Telegram.WebApp.ready();
 
-    <!-- Рецепти -->
-    <section class="screen active" data-screen="recipe">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">🍳</div>
-          <div class="screen-title">Отримати рецепт</div>
-        </div>
-        <p class="screen-subtitle">
-          Обери тип прийому їжі та напиши, що є в холодильнику — Coconut підбере ідеальний рецепт.
-        </p>
-
-        <div class="field-label">Тип прийому їжі</div>
-        <div class="pill-row">
-          <div class="pill active">Сніданок</div>
-          <div class="pill">Обід</div>
-          <div class="pill">Вечеря</div>
-          <div class="pill">Перекус</div>
-        </div>
-
-        <div class="field-label">Інгредієнти / побажання</div>
-        <textarea class="field" placeholder="Наприклад: яйця, сир, помідори, без глютену..."></textarea>
-
-        <button class="primary-btn">Згенерувати рецепт</button>
-        <div class="hint">AI-рецепт надійде прямо в цей міні застосунок / чат з ботом.</div>
-      </div>
-    </section>
-
-    <!-- Меню -->
-    <section class="screen" data-screen="menu">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">🥗</div>
-          <div class="screen-title">Меню на день / тиждень</div>
-        </div>
-        <p class="screen-subtitle">
-          Coconut складе збалансоване меню під твою ціль: схуднення, набір ваги або просто здорове харчування.
-        </p>
-
-        <div class="field-label">Ціль</div>
-        <div class="pill-row">
-          <div class="pill active">Здорове харчування</div>
-          <div class="pill">Схуднення</div>
-          <div class="pill">Набір м'язів</div>
-        </div>
-
-        <div class="field-label">Період</div>
-        <div class="pill-row">
-          <div class="pill active">1 день</div>
-          <div class="pill">7 днів</div>
-        </div>
-
-        <div class="field-label">Обмеження</div>
-        <textarea class="field" placeholder="Наприклад: без лактози, без свинини, 1600 ккал на день..."></textarea>
-
-        <button class="primary-btn">Згенерувати меню</button>
-        <div class="hint">Повне меню з рецептами надійде в чат та буде доступне для експорту.</div>
-      </div>
-    </section>
-
-    <!-- Пошук -->
-    <section class="screen" data-screen="search">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">🔍</div>
-          <div class="screen-title">Пошук рецептів</div>
-        </div>
-        <p class="screen-subtitle">
-          Знайди будь-яку страву за назвою, інгредієнтами або стилем кухні.
-        </p>
-
-        <div class="field-label">Запит</div>
-        <input class="field" placeholder="Наприклад: паста з лососем, борщ без м'яса, кето десерт..." />
-
-        <button class="primary-btn">Знайти страви</button>
-        <div class="hint">Результати пошуку Coconut AI відправить у цьому ж вікні.</div>
-      </div>
-    </section>
-
-    <!-- Покупки -->
-    <section class="screen" data-screen="shopping">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">🛍️</div>
-          <div class="screen-title">Список покупок</div>
-        </div>
-        <p class="screen-subtitle">
-          Перетвори своє меню в готовий список покупок для магазину.
-        </p>
-
-        <div class="field-label">Страви / меню</div>
-        <textarea class="field" placeholder="Встав назви страв або опиши, на скільки днів потрібні продукти..."></textarea>
-
-        <button class="primary-btn">Згенерувати список покупок</button>
-        <div class="hint">Список буде зручним для використання в Telegram на телефоні.</div>
-      </div>
-    </section>
-
-    <!-- PDF -->
-    <section class="screen" data-screen="pdf">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">📄</div>
-          <div class="screen-title">Експорт у PDF</div>
-        </div>
-        <p class="screen-subtitle">
-          Отримай красивий PDF з меню, рецептами та списком покупок — ідеально для друку або шерингу.
-        </p>
-
-        <div class="field-label">Що експортувати</div>
-        <div class="pill-row">
-          <div class="pill active">Меню + рецепти</div>
-          <div class="pill">Лише меню</div>
-          <div class="pill">Лише список покупок</div>
-        </div>
-
-        <button class="primary-btn">Створити PDF</button>
-        <div class="hint">Посилання на PDF Coconut надішле прямо в чат.</div>
-      </div>
-    </section>
-
-    <!-- Фото / Vision -->
-    <section class="screen" data-screen="vision">
-      <div class="screen-card">
-        <div class="screen-header">
-          <div class="screen-header-icon">📸</div>
-          <div class="screen-title">Фото аналіз їжі</div>
-        </div>
-        <p class="screen-subtitle">
-          Зроби фото страви або продуктів — Coconut підрахує калорії та підкаже, що приготувати.
-        </p>
-
-        <div class="field-label">Як це працює</div>
-        <p class="screen-subtitle">
-          1. Надішли фото страви боту Coconut у Telegram.<br/>
-          2. Обери режим <b>Фото</b> у цьому міні застосунку.<br/>
-          3. Coconut AI проаналізує зображення та надішле результат.
-        </p>
-
-        <button class="primary-btn">Інструкція ще раз в чаті</button>
-        <div class="hint">Бот відправить коротку інструкцію та приклад аналізу фото.</div>
-      </div>
-    </section>
-
-  </div>
-
-<script>
-  Telegram.WebApp.ready();
-
-  function openMode(mode) {
-    // надсилаємо дані боту — як і раніше
-    Telegram.WebApp.sendData(JSON.stringify({ open: mode }));
-
-    // і паралельно перемикаємо внутрішню сторінку
-    showScreen(mode);
-  }
-
-  function showScreen(mode) {
-    document.querySelectorAll('.screen').forEach(el => {
-      el.classList.remove('active');
+    document.querySelectorAll(".card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const action = card.dataset.action;
+        Telegram.WebApp.sendData(JSON.stringify({ open: action }));
+      });
     });
-    const target = document.querySelector('[data-screen="' + mode + '"]');
-    if (target) {
-      target.classList.add('active');
-    }
-  }
-</script>
-
+  </script>
 </body>
 </html>
