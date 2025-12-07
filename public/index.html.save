@@ -1,0 +1,139 @@
+        <div class="screen-header">
+          <div class="screen-header-icon">🥗</div>
+          <div class="screen-title">Меню на день / тиждень</div>
+        </div>
+        <p class="screen-subtitle">
+          Coconut складе збалансоване меню під твою ціль: схуднення, набір ваги або просто здорове харчування.
+        </p>
+
+        <div class="field-label">Ціль</div>
+        <div class="pill-row">
+          <div class="pill active">Здорове харчування</div>
+          <div class="pill">Схуднення</div>
+          <div class="pill">Набір м'язів</div>
+        </div>
+
+        <div class="field-label">Період</div>
+        <div class="pill-row">
+          <div class="pill active">1 день</div>
+          <div class="pill">7 днів</div>
+        </div>
+
+        <div class="field-label">Обмеження</div>
+        <textarea class="field" placeholder="Наприклад: без лактози, без свинини, 1600 ккал на день..."></textarea>
+
+        <button class="primary-btn">Згенерувати меню</button>
+        <div class="hint">Повне меню з рецептами надійде в чат та буде доступне для експорту.</div>
+      </div>
+    </section>
+
+    <!-- Пошук -->
+    <section class="screen" data-screen="search">
+      <div class="screen-card">
+        <div class="screen-header">
+          <div class="screen-header-icon">🔍</div>
+          <div class="screen-title">Пошук рецептів</div>
+        </div>
+        <p class="screen-subtitle">
+          Знайди будь-яку страву за назвою, інгредієнтами або стилем кухні.
+        </p>
+
+        <div class="field-label">Запит</div>
+        <input class="field" placeholder="Наприклад: паста з лососем, борщ без м'яса, кето десерт..." />
+
+        <button class="primary-btn">Знайти страви</button>
+        <div class="hint">Результати пошуку Coconut AI відправить у цьому ж вікні.</div>
+      </div>
+    </section>
+
+    <!-- Покупки -->
+    <section class="screen" data-screen="shopping">
+      <div class="screen-card">
+        <div class="screen-header">
+          <div class="screen-header-icon">🛍️</div>
+          <div class="screen-title">Список покупок</div>
+        </div>
+        <p class="screen-subtitle">
+          Перетвори своє меню в готовий список покупок для магазину.
+        </p>
+
+        <div class="field-label">Страви / меню</div>
+        <textarea class="field" placeholder="Встав назви страв або опиши, на скільки днів потрібні продукти..."></textarea>
+
+        <button class="primary-btn">Згенерувати список покупок</button>
+        <div class="hint">Список буде зручним для використання в Telegram на телефоні.</div>
+      </div>
+    </section>
+
+    <!-- PDF -->
+    <section class="screen" data-screen="pdf">
+      <div class="screen-card">
+        <div class="screen-header">
+          <div class="screen-header-icon">📄</div>
+          <div class="screen-title">Експорт у PDF</div>
+        </div>
+        <p class="screen-subtitle">
+          Отримай красивий PDF з меню, рецептами та списком покупок — ідеально для друку або шерингу.
+        </p>
+
+        <div class="field-label">Що експортувати</div>
+        <div class="pill-row">
+          <div class="pill active">Меню + рецепти</div>
+          <div class="pill">Лише меню</div>
+          <div class="pill">Лише список покупок</div>
+        </div>
+
+        <button class="primary-btn">Створити PDF</button>
+        <div class="hint">Посилання на PDF Coconut надішле прямо в чат.</div>
+      </div>
+    </section>
+
+    <!-- Фото / Vision -->
+    <section class="screen" data-screen="vision">
+      <div class="screen-card">
+        <div class="screen-header">
+          <div class="screen-header-icon">📸</div>
+          <div class="screen-title">Фото аналіз їжі</div>
+        </div>
+        <p class="screen-subtitle">
+          Зроби фото страви або продуктів — Coconut підрахує калорії та підкаже, що приготувати.
+        </p>
+
+        <div class="field-label">Як це працює</div>
+        <p class="screen-subtitle">
+          1. Надішли фото страви боту Coconut у Telegram.<br/>
+          2. Обери режим <b>Фото</b> у цьому міні застосунку.<br/>
+          3. Coconut AI проаналізує зображення та надішле результат.
+        </p>
+
+        <button class="primary-btn">Інструкція ще раз в чаті</button>
+        <div class="hint">Бот відправить коротку інструкцію та приклад аналізу фото.</div>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+  Telegram.WebApp.ready();
+
+  function openMode(mode) {
+    // надсилаємо дані боту — як і раніше
+    Telegram.WebApp.sendData(JSON.stringify({ open: mode }));
+
+    // і паралельно перемикаємо внутрішню сторінку
+    showScreen(mode);
+  }
+
+  function showScreen(mode) {
+    document.querySelectorAll('.screen').forEach(el => {
+      el.classList.remove('active');
+    });
+    const target = document.querySelector('[data-screen="' + mode + '"]');
+    if (target) {
+      target.classList.add('active');
+    }
+  }
+</script>
+
+</body>
+</html>

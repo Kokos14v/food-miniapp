@@ -1,63 +1,169 @@
 import TelegramBot from "node-telegram-bot-api";
+import dotenv from "dotenv";
 
-// 🔐 ВСТАВ СВІЙ ТОКЕН
-const TOKEN = "ВАШ_ТОКЕН_ТУТ";
+dotenv.config();
 
-// 🌐 URL Mini App
-const MINI_APP_URL = "https://food-miniapp.onrender.com/";
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const WEBAPP_URL = process.env.WEBAPP_URL;
 
-// Створюємо бота
-const bot = new TelegramBot(TOKEN, { polling: true });
+// Базовий URL бекенду (без слеша в кінці)
+const API_BASE =
+  (WEBAPP_URL ? WEBAPP_URL.replace(/\/+$/, "") : "") ||
+  "https://food-miniapp.onrender.com";
 
-console.log("🤖 Coconut AI Bot запущений...");
+if (!BOT_TOKEN) {
+  console.error("❌ BOT_TOKEN не знайдений у .env");
+  process.exit(1);
+}
 
-// Анімоване привітання
-const wave = (text) =>
-  [...text].map((c, i) => (i % 2 === 0 ? "✨" + c + "✨" : "💎" + c + "💎")).join(" ");
+console.log("Starting bot...");
+console.log("API_BASE:", API_BASE);
 
-// -------- /start --------
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-  await bot.sendMessage(
-    chatId,
-    wave("Привіт! Я Coconut AI 🥥🤍") +
-      "\n\nЯ допоможу з рецептами, продуктами та персональними AI-порадами.\n\n" +
-      "👉 Натисни кнопку нижче, щоб запустити Coconut AI"
-  );
+console.log("Bot is now running and polling updates...");
 
-  await bot.sendMessage(chatId, "Відкрити Coconut AI:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "🥥 ВІДКРИТИ APP",
-            web_app: { url: MINI_APP_URL }
-          }
-        ]
-      ]
-    }
-  });
-});
-
-// -------- Всі інші повідомлення --------
+// ===================== /start =====================
 bot.on("message", async (msg) => {
-  if (msg.text && msg.text !== "/start") {
+  // Щоб не дублювати обробку web_app_data
+  if (msg.web_app_data) return;
+
+  console.log("MESSAGE RECEIVED:", msg);
+
+  if (msg.text === "/start") {
     await bot.sendMessage(
       msg.chat.id,
-      "🥥 Я працюю всередині Mini App.\n\nНатисни нижче, щоб продовжити:",
+      "Привіт! Це Coconut AI 🥥\nНатисни кнопку нижче, щоб відкрити міні застосунок.",
       {
         reply_markup: {
-          inline_keyboard: [
+          keyboard: [
             [
               {
                 text: "Відкрити Coconut AI",
-                web_app: { url: MINI_APP_URL }
-              }
-            ]
-          ]
-        }
+                web_app: { url: WEBAPP_URL },
+              },
+            ],
+          ],
+          resize_keyboard: true,
+        },
       }
     );
   }
 });
+
+// ===================== WEB APP DATA =====================
+bot.on("web_app_data", async (msg) => {
+  try {
+    console.log("WEBAPP DATA RAW:", msg.web_app_data);
+    const chatId = msg.chat.id;
+
+    let payload = {};
+    try {
+      payload = JSON.parse(msg.web_app_data.data || "{}");
+    } catch (e) {
+      console.error("❌ Не вдалося розпарсити web_app_data:", e);
+    }
+
+    const action = payload.open || payload.action || null;
+    console.log("WEBAPP ACTION:", action, "PAYLOAD:", payload);
+
+    if (action === "recipe") {
+      await handleRecipe(chatId);
+    } else if (action === "chat") {
+      await bot.sendMessage(
+        chatId,
+        "Напиши мені в чат, що ти хочеш приготувати, і я допоможу з ідеями 🤖"
+      );
+    } else if (action === "photo") {
+      await bot.sendMessage(
+        chatId,
+        "Надішли мені фото страви, і я спробую її проаналізувати 📷"
+      );
+    } else {
+      await bot.sendMessage(
+        chatId,
+        "Отримав дані від Mini App 🙌 (дія поки що не налаштована)"
+      );
+    }
+  } catch (err) {
+    console.error("❌ Помилка в обробнику web_app_data:", err);
+  }
+});
+
+// ===================== ЛОГІКА РЕЦЕПТУ =====================
+
+async function handleRecipe(chatId) {
+  try {
+    // 1) Тягнемо список рецептів
+    const listRes = await fetch(`${API_BASE}/api/recipes`);
+    if (!listRes.ok) {
+      console.error("❌ /api/recipes статус:", listRes.status);
+      await bot.sendMessage(
+        chatId,
+        "Не вдалося отримати список рецептів з сервера 😔"
+      );
+      return;
+    }
+
+    const list = await listRes.json();
+
+    if (!Array.isArray(list) || list.length === 0) {
+      await bot.sendMessage(chatId, "Поки що в базі немає рецептів 😔");
+      return;
+    }
+
+    // 2) Вибираємо випадковий рецепт
+    const random = list[Math.floor(Math.random() * list.length)];
+    const recipeId = random.id ?? 0;
+
+    // 3) Тягнемо деталі рецепту
+    const detailRes = await fetch(`${API_BASE}/api/recipes/${recipeId}`);
+    if (!detailRes.ok) {
+      console.error("❌ /api/recipes/:id статус:", detailRes.status);
+      await bot.sendMessage(
+        chatId,
+        "Не вдалося завантажити деталі рецепту 😔"
+      );
+      return;
+    }
+
+    const detail = await detailRes.json();
+
+    // 4) Формуємо текст
+    let text = `🍽 ${detail.title || "Рецепт"}\n\n`;
+
+    if (Array.isArray(detail.ingredients) && detail.ingredients.length > 0) {
+      text += "Інгредієнти:\n";
+      text += detail.ingredients.map((i) => `• ${i}`).join("\n");
+      text += "\n\n";
+    }
+
+    if (detail.description) {
+      text += detail.description;
+    }
+
+    // 5) Якщо є картинка — надсилаємо фото, інакше просто текст
+    if (detail.image) {
+      const fullImageUrl = detail.image.startsWith("http")
+        ? detail.image
+        : `${API_BASE}${detail.image}`;
+
+      try {
+        await bot.sendPhoto(chatId, fullImageUrl, {
+          caption: text,
+        });
+      } catch (e) {
+        console.error("❌ Не вдалося надіслати фото:", e);
+        await bot.sendMessage(chatId, text);
+      }
+    } else {
+      await bot.sendMessage(chatId, text);
+    }
+  } catch (e) {
+    console.error("❌ handleRecipe error:", e);
+    await bot.sendMessage(
+      chatId,
+      "Сталася помилка при отриманні рецепту. Спробуй ще раз трошки пізніше 🙏"
+    );
+  }
+}

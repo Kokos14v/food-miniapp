@@ -1,10 +1,9 @@
-// CoconutAI Mini App — логіка фронтенду
-// ЦЕЙ ФАЙЛ керує екранами та рецептам у самому Mini App
+// CoconutAI Mini App — фронтенд логіка (Reels для рецептів)
 
-(function () {
+document.addEventListener("DOMContentLoaded", () => {
   const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-  // ================== INIT TELEGRAM WEBAPP ==================
+  // --------------- INIT TELEGRAM -----------------
   if (tg) {
     try {
       tg.ready();
@@ -15,272 +14,385 @@
     }
   }
 
-  // ================== ЕКРАНИ ТА МЕНЮ ==================
+  // --------------- DOM ЕЛЕМЕНТИ ------------------
+
+  const screens = {
+    menu: document.getElementById("screen-menu"),
+    recipes: document.getElementById("screen-recipes"),
+    plan: document.getElementById("screen-plan"),
+    analysis: document.getElementById("screen-analysis"),
+    settings: document.getElementById("screen-settings"),
+  };
 
   const cards = document.querySelectorAll("[data-action]");
-  const screens = document.querySelectorAll(".screen");
+  const backButtons = document.querySelectorAll("[data-back]");
 
-  function setActiveScreen(name) {
-    if (!screens.length) return;
+  // Recipes DOM
+  const recipesScreen = screens.recipes;
+  const reelEl = document.getElementById("recipe-reel");
+  const imageWrapEl = document.getElementById("recipe-image-wrap");
+  const imageEl = document.getElementById("recipe-image");
+  const imageFallbackEl = document.getElementById("recipe-image-fallback");
+  const titleEl = document.getElementById("recipe-title");
+  const counterEl = document.getElementById("recipe-counter");
+  const descEl = document.getElementById("recipe-description");
+  const ingredientsListEl = document.getElementById("recipe-ingredients-list");
+  const refreshBtn = document.getElementById("recipes-refresh");
+  const backTopBtn = document.getElementById("recipes-back-top");
+  const backBottomBtn = document.getElementById("recipes-back");
+  const prevBtn = document.getElementById("recipe-prev");
+  const nextBtn = document.getElementById("recipe-next");
+  const instacartBtn = document.getElementById("recipe-instacart");
 
-    const wantedIds = new Set([name, `screen-${name}`]);
+  const loaderEl = document.getElementById("recipes-loader");
+  const errorEl = document.getElementById("recipes-error");
+  const emptyEl = document.getElementById("recipes-empty");
 
-    screens.forEach((el) => {
-      const id = el.id || "";
-      const ds = el.dataset.screen || "";
-      const isActive = wantedIds.has(id) || ds === name;
+  // --------------- СТАН РЕЦЕПТІВ ------------------
 
-      if (isActive) {
-        el.classList.add("active");
-      } else {
-        el.classList.remove("active");
-      }
-    });
-  }
-
-  // Клік по картках головного меню
-  cards.forEach((card) => {
-    const action = card.dataset.action;
-    card.addEventListener("click", () => {
-      if (!action) return;
-
-      if (action === "recipes") {
-        setActiveScreen("recipes");
-        loadRecipesList();
-      } else if (action === "grocery") {
-        setActiveScreen("grocery");
-      } else if (action === "tracker") {
-        setActiveScreen("tracker");
-      } else if (action === "settings") {
-        setActiveScreen("settings");
-      } else {
-        console.log("Unknown action:", action);
-      }
-
-      if (tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
-        tg.HapticFeedback.impactOccurred("light");
-      }
-    });
-  });
-
-  // ================== РОЗДІЛ "РЕЦЕПТИ" ==================
-
-  const recipesScreen = document.getElementById("screen-recipes");
-  let recipesListEl = null;
-  let recipeDetailsEl = null;
-  let recipeBackBtn = null;
-
-  let recipesCache = null;
+  let recipesList = [];          // список з /api/recipes (id, title, image)
+  const recipeCache = new Map(); // деталі з /api/recipes/:id
+  let currentIndex = 0;
   let isLoadingList = false;
-  let isLoadingOne = false;
+  let isLoadingRecipe = false;
 
-  // Створюємо в середині екрану layout (список + деталі)
-  function ensureRecipeLayout() {
-    if (!recipesScreen) return;
+  // --------------- УТИЛІТИ -----------------------
 
-    if (!recipesListEl || !recipeDetailsEl) {
-      recipesScreen.innerHTML = `
-        <div class="screen-card">
-          <div class="screen-title-row">
-            <h2>Рецепти</h2>
-            <button class="small-pill" type="button" data-recipes-refresh>
-              Оновити
-            </button>
-          </div>
-
-          <p class="screen-subtitle">
-            Обери корисний рецепт. Натисни на картку, щоб побачити деталі.
-          </p>
-
-          <div class="recipes-layout">
-            <div class="recipes-list" data-recipes-list></div>
-
-            <div class="recipe-details" data-recipe-details>
-              <div class="recipe-details-empty">
-                Обери рецепт зліва, щоб побачити опис та інгредієнти.
-              </div>
-            </div>
-          </div>
-
-          <button class="back-button" type="button" data-recipes-back>
-            ← Назад до меню
-          </button>
-        </div>
-      `;
-
-      recipesListEl = recipesScreen.querySelector("[data-recipes-list]");
-      recipeDetailsEl = recipesScreen.querySelector("[data-recipe-details]");
-      recipeBackBtn = recipesScreen.querySelector("[data-recipes-back]");
-
-      const refreshBtn = recipesScreen.querySelector("[data-recipes-refresh]");
-      if (refreshBtn) {
-        refreshBtn.addEventListener("click", () => {
-          recipesCache = null;
-          loadRecipesList(true);
-          if (
-            tg &&
-            tg.HapticFeedback &&
-            tg.HapticFeedback.notificationOccurred
-          ) {
-            tg.HapticFeedback.notificationOccurred("success");
-          }
-        });
-      }
-
-      if (recipeBackBtn) {
-        recipeBackBtn.addEventListener("click", () => {
-          setActiveScreen("home");
-        });
-      }
-    }
-  }
-
-  // Універсальна функція запиту JSON
-  async function fetchJson(url) {
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
+  function openScreen(name) {
+    Object.entries(screens).forEach(([key, el]) => {
+      if (!el) return;
+      el.classList.toggle("active", key === name);
     });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    return res.json();
   }
 
-  // Завантаження СПИСКУ рецептів
-  async function loadRecipesList(force = false) {
-    ensureRecipeLayout();
-    if (!recipesListEl) return;
-    if (isLoadingList) return;
+  function goMenu() {
+    openScreen("menu");
+  }
 
+  function showLoader(show) {
+    if (!loaderEl) return;
+    loaderEl.classList.toggle("hidden", !show);
+  }
+
+  function showError(msg) {
+    if (!errorEl) return;
+    if (msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove("hidden");
+    } else {
+      errorEl.classList.add("hidden");
+    }
+  }
+
+  function showEmpty(show) {
+    if (!emptyEl) return;
+    emptyEl.classList.toggle("hidden", !show);
+  }
+
+  function updateCounter() {
+    if (!counterEl) return;
+    const total = recipesList.length || 0;
+    const idx = total ? currentIndex + 1 : 0;
+    counterEl.textContent = `${idx} / ${total}`;
+  }
+
+  function openInstacart(recipe) {
+    if (!recipe) return;
+    const url = recipe.instacartUrl || "https://www.instacart.com";
+    if (tg && tg.openLink) {
+      tg.openLink(url);
+    } else {
+      window.open(url, "_blank");
+    }
+  }
+
+  // --------------- РОБОТА З API ------------------
+
+  const API_BASE = ""; // той самий домен (Render вже проксі)
+
+  async function loadRecipesList() {
+    if (isLoadingList) return;
     isLoadingList = true;
-    recipesListEl.innerHTML =
-      '<div class="mini-loader">Завантаження рецептів…</div>';
+    showError("");
+    showEmpty(false);
+    showLoader(true);
 
     try {
-      if (!recipesCache || force) {
-        const data = await fetchJson("/api/recipes");
-        recipesCache = Array.isArray(data) ? data : [];
-      }
-
-      if (!recipesCache.length) {
-        recipesListEl.innerHTML =
-          '<div class="empty-state">Поки що немає рецептів</div>';
-        return;
-      }
-
-      recipesListEl.innerHTML = recipesCache
-        .map(
-          (r) => `
-          <button class="recipe-card" type="button" data-recipe-id="${String(
-            r.id
-          )}">
-            ${
-              r.image
-                ? `<div class="recipe-thumb" style="background-image: url('${r.image}')"></div>`
-                : `<div class="recipe-thumb recipe-thumb-empty">🥥</div>`
-            }
-            <div class="recipe-title">${r.title || "Без назви"}</div>
-          </button>
-        `
-        )
-        .join("");
-
-      recipesListEl.querySelectorAll("[data-recipe-id]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const id = btn.getAttribute("data-recipe-id");
-          if (!id) return;
-          openRecipeDetails(id);
-        });
+      const res = await fetch(`${API_BASE}/api/recipes`, {
+        headers: { "Accept": "application/json" },
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        recipesList = [];
+        showEmpty(true);
+      } else {
+        recipesList = data;
+        currentIndex = 0;
+        showEmpty(false);
+      }
+      updateCounter();
+      if (recipesList.length > 0) {
+        await showRecipeByIndex(0);
+      } else {
+        renderEmptyRecipe();
+      }
     } catch (err) {
-      console.error("Failed to load recipes list", err);
-      recipesListEl.innerHTML = `
-        <div class="error-state">
-          Не вдалося завантажити рецепти. Спробуй ще раз пізніше.
-        </div>
-      `;
+      console.error("Error loading recipes list:", err);
+      showError("Не вдалося завантажити рецепти. Спробуй ще раз.");
     } finally {
       isLoadingList = false;
+      showLoader(false);
     }
   }
 
-  // Завантаження КОНКРЕТНОГО рецепта
-  async function openRecipeDetails(id) {
-    ensureRecipeLayout();
-    if (!recipeDetailsEl) return;
-    if (isLoadingOne) return;
-
-    isLoadingOne = true;
-    recipeDetailsEl.innerHTML =
-      '<div class="mini-loader">Завантаження рецепта…</div>';
-
+  async function loadRecipeDetails(recipeId) {
+    if (!recipeId) return null;
+    if (recipeCache.has(recipeId)) {
+      return recipeCache.get(recipeId);
+    }
+    isLoadingRecipe = true;
     try {
-      const data = await fetchJson(
-        `/api/recipes/${encodeURIComponent(id)}`
-      );
-
-      const ingredientsHtml = (data.ingredients || [])
-        .map((i) => `<li>${i}</li>`)
-        .join("");
-
-      recipeDetailsEl.innerHTML = `
-        <div class="recipe-details-inner">
-          ${
-            data.image
-              ? `<div class="recipe-details-photo" style="background-image: url('${data.image}')"></div>`
-              : ""
-          }
-          <h3>${data.title || "Без назви"}</h3>
-
-          ${
-            data.description
-              ? `<p class="recipe-description">${data.description}</p>`
-              : ""
-          }
-
-          ${
-            ingredientsHtml
-              ? `
-            <h4>Інгредієнти</h4>
-            <ul class="recipe-ingredients">
-              ${ingredientsHtml}
-            </ul>
-          `
-              : ""
-          }
-
-          ${
-            data.instacartUrl
-              ? `
-            <a
-              class="primary-link"
-              href="${data.instacartUrl}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Купити інгредієнти в Instacart
-            </a>
-          `
-              : ""
-          }
-        </div>
-      `;
-
-      if (tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged) {
-        tg.HapticFeedback.selectionChanged();
-      }
+      const res = await fetch(`${API_BASE}/api/recipes/${recipeId}`, {
+        headers: { "Accept": "application/json" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      recipeCache.set(recipeId, data);
+      return data;
     } catch (err) {
-      console.error("Failed to load recipe details", err);
-      recipeDetailsEl.innerHTML = `
-        <div class="error-state">
-          Не вдалося завантажити рецепт. Спробуй пізніше.
-        </div>
-      `;
+      console.error("Error loading recipe:", err);
+      showError("Не вдалося завантажити рецепт.");
+      return null;
     } finally {
-      isLoadingOne = false;
+      isLoadingRecipe = false;
     }
   }
 
-  // За замовчуванням відкриваємо головний екран
-  setActiveScreen("home");
-})();
+  // --------------- РЕНДЕР РЕЦЕПТУ ----------------
+
+  function renderEmptyRecipe() {
+    if (!titleEl || !descEl || !ingredientsListEl) return;
+    titleEl.textContent = "Рецепт";
+    descEl.textContent = "Поки що немає рецептів.";
+    ingredientsListEl.innerHTML = "";
+    if (imageWrapEl) {
+      imageWrapEl.classList.remove("has-image");
+    }
+    if (imageEl) {
+      imageEl.src = "";
+      imageEl.alt = "Рецепт";
+    }
+    if (imageFallbackEl) {
+      imageFallbackEl.classList.remove("hidden");
+    }
+  }
+
+  function renderRecipe(recipe) {
+    if (!recipe) return;
+
+    const title = recipe.title || recipe.name || "Рецепт";
+    const desc =
+      recipe.description ||
+      recipe.text ||
+      "Корисний рецепт без додаткового опису.";
+    const ingredients = Array.isArray(recipe.ingredients)
+      ? recipe.ingredients
+      : [];
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+
+    if (ingredientsListEl) {
+      ingredientsListEl.innerHTML = "";
+      if (ingredients.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "Інгредієнти не вказані.";
+        ingredientsListEl.appendChild(li);
+      } else {
+        ingredients.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          ingredientsListEl.appendChild(li);
+        });
+      }
+    }
+
+    if (recipe.image && imageEl && imageWrapEl) {
+      imageEl.src = recipe.image;
+      imageEl.alt = title;
+      imageWrapEl.classList.add("has-image");
+      if (imageFallbackEl) imageFallbackEl.classList.add("hidden");
+    } else {
+      if (imageEl) {
+        imageEl.src = "";
+        imageEl.alt = "Рецепт";
+      }
+      if (imageWrapEl) imageWrapEl.classList.remove("has-image");
+      if (imageFallbackEl) imageFallbackEl.classList.remove("hidden");
+    }
+
+    updateCounter();
+    showError("");
+  }
+
+  async function showRecipeByIndex(index) {
+    if (!recipesList.length) {
+      renderEmptyRecipe();
+      return;
+    }
+    let nextIndex = index;
+    if (nextIndex < 0) nextIndex = recipesList.length - 1;
+    if (nextIndex >= recipesList.length) nextIndex = 0;
+
+    currentIndex = nextIndex;
+    const meta = recipesList[currentIndex];
+    const recipeId = meta.id;
+
+    const recipe = await loadRecipeDetails(recipeId);
+    if (!recipe) return;
+
+    renderRecipe(recipe);
+  }
+
+  // --------------- СВАЙПИ ------------------------
+
+  let touchStartY = null;
+  let touchStartX = null;
+
+  function handleTouchStart(e) {
+    if (!e.touches || e.touches.length === 0) return;
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e) {
+    if (touchStartY === null || touchStartX === null) return;
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndX = e.changedTouches[0].clientX;
+
+    const deltaY = touchEndY - touchStartY;
+    const deltaX = touchEndX - touchStartX;
+
+    const absY = Math.abs(deltaY);
+    const absX = Math.abs(deltaX);
+
+    // Вліво/вправо — назад до меню (правий свайп)
+    if (absX > absY && absX > 40) {
+      if (deltaX > 0) {
+        // свайп вправо
+        goMenu();
+      }
+      touchStartY = null;
+      touchStartX = null;
+      return;
+    }
+
+    // Вгору/вниз — зміна рецепта
+    if (absY > 40) {
+      if (deltaY < 0) {
+        // вгору → наступний
+        showRecipeByIndex(currentIndex + 1);
+      } else {
+        // вниз → попередній
+        showRecipeByIndex(currentIndex - 1);
+      }
+    }
+
+    touchStartY = null;
+    touchStartX = null;
+  }
+
+  if (reelEl) {
+    reelEl.addEventListener("touchstart", handleTouchStart, { passive: true });
+    reelEl.addEventListener("touchend", handleTouchEnd, { passive: true });
+  }
+
+  // --------------- ОБРОБКА КНОПОК ----------------
+
+  function handleCardAction(action) {
+    switch (action) {
+      case "recipes":
+        openScreen("recipes");
+        if (tg && tg.sendData) {
+          tg.sendData(JSON.stringify({ open: "recipe" }));
+        }
+        if (!recipesList.length) {
+          loadRecipesList();
+        }
+        break;
+
+      case "plan":
+        openScreen("plan");
+        if (tg && tg.sendData) {
+          tg.sendData(JSON.stringify({ open: "plan" }));
+        }
+        break;
+
+      case "analysis":
+        openScreen("analysis");
+        if (tg && tg.sendData) {
+          tg.sendData(JSON.stringify({ open: "analysis" }));
+        }
+        break;
+
+      case "settings":
+        openScreen("settings");
+        if (tg && tg.sendData) {
+          tg.sendData(JSON.stringify({ open: "settings" }));
+        }
+        break;
+
+      default:
+        console.warn("Unknown action:", action);
+        break;
+    }
+  }
+
+  cards.forEach((card) => {
+    const action = card.getAttribute("data-action");
+    if (!action) return;
+    card.addEventListener("click", () => handleCardAction(action));
+  });
+
+  backButtons.forEach((btn) => {
+    btn.addEventListener("click", goMenu);
+  });
+
+  if (backTopBtn) backTopBtn.addEventListener("click", goMenu);
+  if (backBottomBtn) backBottomBtn.addEventListener("click", goMenu);
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      recipeCache.clear();
+      loadRecipesList();
+    });
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      showRecipeByIndex(currentIndex - 1);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      showRecipeByIndex(currentIndex + 1);
+    });
+  }
+
+  if (instacartBtn) {
+    instacartBtn.addEventListener("click", async () => {
+      if (!recipesList.length) return;
+      const meta = recipesList[currentIndex];
+      const recipe = await loadRecipeDetails(meta.id);
+      if (!recipe) return;
+      openInstacart(recipe);
+    });
+  }
+
+  // --------------- СТАРТ ------------------------
+
+  // Початковий екран — меню
+  openScreen("menu");
+});
