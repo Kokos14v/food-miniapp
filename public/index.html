@@ -23,7 +23,11 @@
       --text: #F9FEFF;
       --muted: #B8D5D2;
 
-      --radius: 24px;
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
@@ -37,31 +41,47 @@
 
     /* HEADER */
     .header {
-      margin: 22px;
-      padding: 22px 18px;
+      margin: 20px 18px 14px;
+      padding: 20px 18px;
+
       background: var(--glass);
       border-radius: 30px;
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(24px);
+
       text-align: center;
-      box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+      animation: fadeIn 0.5s ease-out;
     }
 
-    /* LOGO */
     .logo {
-      width: 90px;
-      height: 90px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      margin: 0 auto 12px;
-      background: radial-gradient(circle, rgba(11,255,204,0.5), rgba(11,255,204,0.2), transparent 70%);
+      margin: 0 auto 10px;
+
+      background: radial-gradient(circle,
+        rgba(11,255,204,0.55),
+        rgba(11,255,204,0.25),
+        transparent 70%);
+
       box-shadow:
-        0 0 32px rgba(11,255,204,0.55),
-        0 0 70px rgba(11,255,204,0.3),
-        inset 0 0 20px rgba(255,255,255,0.1);
+        0 0 35px rgba(11,255,204,0.55),
+        0 0 60px rgba(11,255,204,0.35),
+        inset 0 0 18px rgba(255,255,255,0.12);
+
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: breathing 3.8s ease-in-out infinite;
+
+      animation: breathing 4s ease-in-out infinite;
+    }
+
+    .logo img {
+      width: 72%;
+      height: 72%;
+      border-radius: 50%;
+      filter: drop-shadow(0 0 14px rgba(11,255,204,0.45));
     }
 
     @keyframes breathing {
@@ -70,122 +90,350 @@
       100% { transform: scale(1); }
     }
 
-    .logo img {
-      width: 74%;
-      height: 74%;
-      border-radius: 50%;
-      filter: drop-shadow(0 0 14px rgba(11,255,204,0.4));
-    }
-
     .header h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 800;
+      letter-spacing: -0.4px;
     }
 
     .header p {
+      margin-top: 6px;
       color: var(--muted);
       font-size: 14px;
-      margin: 6px 0 0;
     }
 
-    /* COMPACT MENU GRID */
+    /* GRID MENU — компактний */
     .grid {
-      margin: 24px 22px 16px;
+      margin: 10px 14px 16px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      animation: fadeIn 0.7s ease-out;
     }
 
     .card {
-      padding: 18px 14px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      padding: 12px 10px;
+      background: linear-gradient(
+          135deg,
+          rgba(255,255,255,0.05),
+          rgba(255,255,255,0.025)
+      );
       border-radius: var(--radius);
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
       backdrop-filter: blur(20px);
+
       text-align: center;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text);
+
       display: flex;
       flex-direction: column;
       align-items: center;
+
       cursor: pointer;
-      transition: all 0.25s ease;
-      box-shadow: inset 0 0 12px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+      box-shadow:
+        inset 0 0 14px rgba(255,255,255,0.03),
+        0 10px 28px rgba(0,0,0,0.35);
+      min-height: 88px;
     }
 
     .card:hover {
-      transform: translateY(-6px) scale(1.04);
+      transform: translateY(-4px) scale(1.02);
       border-color: var(--accent);
-      box-shadow: 0 0 22px var(--accent-glow), 0 0 40px rgba(11,255,204,0.22);
+      box-shadow:
+        0 0 24px var(--accent-glow),
+        0 0 40px rgba(11,255,204,0.25);
     }
 
     .card:active {
-      transform: scale(0.94);
+      transform: scale(0.96);
     }
 
     .icon {
-      font-size: 30px;
-      margin-bottom: 8px;
+      font-size: 24px;
+      margin-bottom: 6px;
       color: var(--accent);
       filter: drop-shadow(0 0 6px var(--accent-soft));
     }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(18px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* INNER SCREENS */
+    .screens {
+      margin: 0 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .screen {
+      display: none;
+      animation: screenIn 0.25s ease-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes screenIn {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .screen-card {
+      padding: 16px 14px 18px;
+      border-radius: 24px;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.05),
+        rgba(255,255,255,0.015)
+      );
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow:
+        0 12px 32px rgba(0,0,0,0.45),
+        inset 0 0 12px rgba(255,255,255,0.04);
+    }
+
+    .screen-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .screen-title-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .screen-title-main span.icon {
+      margin-bottom: 0;
+      font-size: 20px;
+    }
+
+    .screen-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .back-btn {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(0,0,0,0.35);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .screen-subtitle {
+      margin: 2px 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* RECIPE LIST */
+    .recipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .recipe-card {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 0 18px rgba(11,255,204,0.35);
+    }
+
+    .recipe-thumb-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: radial-gradient(circle, rgba(11,255,204,0.3), transparent);
+      flex-shrink: 0;
+    }
+
+    .recipe-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .recipe-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .recipe-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .recipe-meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* SCROLLBAR */
+    .recipe-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .recipe-list::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.4);
+      border-radius: 999px;
+    }
+    .recipe-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3);
+      border-radius: 999px;
+    }
+
+    /* PLACEHOLDER SCREENS */
+    .placeholder {
+      padding: 10px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
   </style>
 </head>
-
 <body>
-  <!-- HEADER -->
   <div class="header">
     <div class="logo">
-      <img src="logo.png" alt="Coconut Logo" />
+      <img src="logo.png" alt="Coconut AI" />
     </div>
-    <h1>FoodHelper Coconut AI</h1>
-    <p>Преміум-дизайн • VisionOS • AI</p>
+    <h1>Coconut AI</h1>
+    <p>Твій персональний асистент харчування в Telegram</p>
   </div>
 
-  <!-- MENU -->
+  <!-- MENU GRID -->
   <div class="grid">
-    <div class="card" data-action="recipe">
-      <div class="icon">🍳</div>
+    <div class="card" data-action="recipes">
+      <div class="icon">🥥</div>
       Рецепти
     </div>
-
-    <div class="card" data-action="menu">
-      <div class="icon">🥗</div>
-      Меню
+    <div class="card" data-action="analysis">
+      <div class="icon">🧬</div>
+      Аналіз харчування
     </div>
-
-    <div class="card" data-action="search">
-      <div class="icon">🔍</div>
-      Пошук
+    <div class="card" data-action="plan">
+      <div class="icon">📅</div>
+      План харчування
     </div>
-
-    <div class="card" data-action="shopping">
-      <div class="icon">🛍️</div>
-      Покупки
-    </div>
-
-    <div class="card" data-action="pdf">
-      <div class="icon">📄</div>
-      PDF
-    </div>
-
-    <div class="card" data-action="vision">
-      <div class="icon">📸</div>
-      Фото
+    <div class="card" data-action="settings">
+      <div class="icon">⚙️</div>
+      Налаштування
     </div>
   </div>
 
-  <script>
-    Telegram.WebApp.ready();
+  <!-- INNER SCREENS -->
+  <div class="screens">
+    <!-- RECIPES SCREEN -->
+    <div id="screen-recipes" class="screen">
+      <div class="screen-card">
+        <div class="screen-title-row">
+          <div class="screen-title-main">
+            <span class="icon">🥥</span>
+            <div class="screen-title">Рецепти Coconut</div>
+          </div>
+          <button class="back-btn" id="back-from-recipes">Назад</button>
+        </div>
+        <div class="screen-subtitle">
+          Обери рецепт, а бот відправить деталі прямо в чат.
+        </div>
 
-    document.querySelectorAll(".card").forEach((card) => {
-      card.addEventListener("click", () => {
-        const action = card.dataset.action;
-        Telegram.WebApp.sendData(JSON.stringify({ open: action }));
-      });
-    });
-  </script>
+        <div class="recipe-list" id="recipe-list">
+          <!-- Список рецептів підвантажується з API -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS SCREEN -->
+    <div id="screen-analysis" class="screen">
+      <div class="screen-card">
+        <div class="screen-title-row">
+          <div class="screen-title-main">
+            <span class="icon">🧬</span>
+            <div class="screen-title">Аналіз харчування</div>
+          </div>
+          <button class="back-btn" id="back-from-analysis">Назад</button>
+        </div>
+        <div class="screen-subtitle">
+          Цей розділ скоро з’явиться. Поки що скористайся командами бота.
+        </div>
+        <div class="placeholder">
+          Тут Coconut AI зможе аналізувати твоє щоденне харчування, рахувати БЖВ
+          та давати персональні рекомендації.
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAN SCREEN -->
+    <div id="screen-plan" class="screen">
+      <div class="screen-card">
+        <div class="screen-title-row">
+          <div class="screen-title-main">
+            <span class="icon">📅</span>
+            <div class="screen-title">План харчування</div>
+          </div>
+          <button class="back-btn" id="back-from-plan">Назад</button>
+        </div>
+        <div class="screen-subtitle">
+          Тут з’явиться конструктор планів харчування.
+        </div>
+        <div class="placeholder">
+          У майбутньому тут можна буде зібрати тижневий план, а бот щодня
+          нагадуватиме, що приготувати.
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div id="screen-settings" class="screen">
+      <div class="screen-card">
+        <div class="screen-title-row">
+          <div class="screen-title-main">
+            <span class="icon">⚙️</span>
+            <div class="screen-title">Налаштування</div>
+          </div>
+          <button class="back-btn" id="back-from-settings">Назад</button>
+        </div>
+        <div class="screen-subtitle">
+          Тут будуть налаштування Coconut AI.
+        </div>
+        <div class="placeholder">
+          Пізніше тут можна буде змінювати цілі, мову, інтенсивність підказок та інші параметри.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ПІДКЛЮЧЕННЯ APP.JS З ВЕРСІЄЮ v=2 -->
+  <script src="app.js?v=2"></script>
 </body>
 </html>
