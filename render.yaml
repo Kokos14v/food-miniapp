@@ -1,8 +1,14 @@
 services:
   - type: web
     name: food-miniapp
-    env: node
-    plan: free
+    runtime: node
     buildCommand: "npm install"
-    startCommand: "npm start"
-    autoDeploy: false
+    startCommand: "node index.js"
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: WEBAPP_URL
+        sync: false
